@@ -29,6 +29,7 @@ def main():
     print(soup.select("section#INGREDIENTS-section > p")[0].find(string=True))
     # Nutritional Information
     print(soup.select("section#GUARANTEED_ANALYSIS-section > div.styles_markdownTable__Mtq7h")[0].text)
+    # Brand
     print(soup.select("a.styles_brandLink__MdoyO")[0].find(string=True))
 
 
