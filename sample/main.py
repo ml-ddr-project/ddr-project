@@ -3,6 +3,7 @@ import requests
 import pandas as pd
 import time
 from url import DOG_FOOD, CAT_FOOD
+import pymongo
 
 def main():
     user_agent = {'User-agent': 'Mozilla/5.0'}
@@ -16,21 +17,23 @@ def main():
         soup = BeautifulSoup(rfile.read(), 'html.parser')
         url_list = soup.select("div.kib-product-card__canvas > a[href]")
         for url in url_list:
-            print(url['href'])
-    soup = BeautifulSoup(requests.get("https://www.chewy.com/purina-pro-plan-adult-sensitive-skin/dp/128666", headers=user_agent).content, 'html.parser')
-    print(soup.find("h1").text)
-    # Category
-    for item in soup.select("li.kib-breadcrumbs-item"):
-        print(item.find("a").text)
-    # Prices
-    print(soup.select("div[data-testid=advertised-price]")[0].find(string=True))
-    print(soup.select("div[data-testid=strike-through-price]")[0].find(string=True))
-    # Ingredients
-    print(soup.select("section#INGREDIENTS-section > p")[0].find(string=True))
-    # Nutritional Information
-    print(soup.select("section#GUARANTEED_ANALYSIS-section > div.styles_markdownTable__Mtq7h")[0].text)
-    # Brand
-    print(soup.select("a.styles_brandLink__MdoyO")[0].find(string=True))
+            soup = BeautifulSoup(requests.get(url['href'], headers=user_agent).content, 'html.parser')
+            print(soup.find("h1").text)
+            # Category
+            for item in soup.select("li.kib-breadcrumbs-item"):
+                print(item.find("a").text)
+            # Prices
+            print(soup.select("div[data-testid=advertised-price]")[0].find(string=True))
+            if(len(soup.select("div[data-testid=strike-through-price]")) != 0):
+                print(soup.select("div[data-testid=strike-through-price]")[0].find(string=True))
+            # Ingredients
+            if(len(soup.select("section#INGREDIENTS-section > p")) != 0):
+                print(soup.select("section#INGREDIENTS-section > p")[0].find(string=True))
+            # Nutritional Information
+            if(len(soup.select("section#GUARANTEED_ANALYSIS-section > div.styles_markdownTable__Mtq7h")) != 0):
+                print(soup.select("section#GUARANTEED_ANALYSIS-section > div.styles_markdownTable__Mtq7h")[0].text)
+            # Brand
+            print(soup.select("a.styles_brandLink__MdoyO")[0].find(string=True))
 
 
 
