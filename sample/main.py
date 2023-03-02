@@ -6,14 +6,10 @@ from url import DOG_FOOD, CAT_FOOD
 from pymongo import MongoClient
 from pymongo.errors import BulkWriteError
 import os
+from .helpers import download_catalogue_page
 
 def main():
-    user_agent = {'User-agent': 'Mozilla/5.0'}
-    for i in range(5):
-        time.sleep(3)
-        resp = requests.get(DOG_FOOD + str(i + 1), headers=user_agent)
-        with open(f"dog_food_{i + 1}.html", "wb+") as wfile:
-            wfile.write(resp.content)
+    download_catalogue_page(DOG_FOOD)
     # Logic for accessing all product links from catalogue
     batch_list = []
     c_docs = 0
