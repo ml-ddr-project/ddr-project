@@ -10,10 +10,10 @@ class ChewyScraper:
             self.user_agent = user_agent
         else:
             self.user_agent = {'User-agent': "Mozilla/5.0"}
-    def scrape(self):
+    def scrape(self, no_pages):
         batch_list = []
         c_docs = 0
-        for i in range(5):
+        for i in range(no_pages):
             with open(f"dog_food_{i+1}.html", "rb") as rfile:
                 soup = BeautifulSoup(rfile.read(), 'html.parser')
                 url_list = soup.select("div.kib-product-card__canvas > a[href]")

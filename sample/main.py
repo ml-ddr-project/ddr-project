@@ -10,10 +10,11 @@ from helpers import download_catalogue_page
 from scraper import ChewyScraper
 
 def main():
-    download_catalogue_page(DOG_FOOD)
+    no_pages = 5
+    download_catalogue_page(DOG_FOOD, no_pages=no_pages)
     # Logic for accessing all product links from catalogue
     scraper = ChewyScraper() 
-    scraper.scrape()
+    scraper.scrape(no_pages=no_pages)
     
 
 if __name__ == "__main__":
