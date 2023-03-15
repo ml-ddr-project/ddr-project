@@ -1,1 +1,1 @@
-from .core import hmm
+from .scraper import hmm
