@@ -72,12 +72,15 @@ class PetTechScraper:
         self.client = MongoClient('localhost', 27017)
         self.headers = headers =  {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36'}
         self.db = self.client["ddr-final-project"]
-        self.tech = self.db["chewy_tech_cleaner"]
-        self.url_feeder = "https://www.chewy.com/s?query=automatic+feeders&rh=price_d%3A5" # filter out price < $50 - other animal or not automatic feeders
-        self.url_feeder_subpage = "https://www.chewy.com/s?query=automatic+feeders&page={}&rh=price_d%3A5"
-        self.url_cleaner = "https://www.chewy.com/s?query=automatic%20self-cleaning"
-        self.url_door = "https://www.chewy.com/s?query=automatic+doors&rh=price_d%3A5" # filter out price < $50
-        self.url_door_subpage = "https://www.chewy.com/s?query=automatic+doors&page={}&rh=price_d%3A5"
+        self._tech = None
+
+    @property
+    def tech(self):
+        return self._tech
+    
+    @tech.setter
+    def tech(self, value):
+        self._tech = self.db['value']
 
     def saveString(htmldoc, filename="test.html"):
         try:
@@ -286,15 +289,3 @@ class PetTechScraper:
             "Reviews": reviews_text
         })
 
-scraper = PetTechScraper()
-scraper.saveResultPage(url_cleaner, "", "tech_cleaners")
-
-
-# create a new db for feeders
-tech = db["chewy_tech_feeder"]
-scraper.saveResultPage(url_feeder, url_feeder_subpage, "tech_feeders")
-
-
-# create a new db for doors
-tech = db["chewy_tech_door"]
-scraper.saveResultPage(url_door, url_door_subpage, "tech_doors")
