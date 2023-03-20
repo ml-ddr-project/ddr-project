@@ -12,6 +12,7 @@ from selenium.webdriver.support import expected_conditions as EC
 import os
 import re
 import time
+import csv
 import requests
 
 class ChewyScraper:
@@ -277,7 +278,7 @@ class PetTechScraper:
             "Specification", rows, "Reviews", reviews_text)
         
         ### mongoDB insert function
-        tech.insert({
+        self.tech.insert({
             "Item Name": name,
             "URL": url,
             "Image": pic,
@@ -298,11 +299,11 @@ class PetSmartScraper:
         self.url_parent = "https://www.petsmart.com/"
         self.driver_path = "/Users/shaolongxue/Documents/_Misc./chromedriver"
 
-    def get_search_result():
+    def get_search_result(self):
         for page_num in range(0, 2): # change range
             # change url
             url = f"https://www.petsmart.com/cat/food-and-treats/veterinary-diets/?pmin=0.01&srule=best-sellers&start={page_num*60}&sz=60&format=ajax"
-            response = requests.get(url, headers = user_agent)
+            response = requests.get(url, headers = self.user_agent)
             soup = BeautifulSoup(response.text, 'html.parser')  
             #################
             ###Change Here###
@@ -313,7 +314,7 @@ class PetSmartScraper:
             time.sleep(15)
 
     ## get urls of a result page
-    def get_item_url():
+    def get_item_url(self):
         url_list = []
         for page_num in range(0, 2):
             #################
@@ -329,7 +330,7 @@ class PetSmartScraper:
 
             for item in range(len(urls)):
                 link = urls[item].get("href")
-                url_list.append(url_parent + link)
+                url_list.append(self.url_parent + link)
 
         # store urls locally for easier retrival
         #################
@@ -341,7 +342,7 @@ class PetSmartScraper:
                 writer.writerow([url])
 
     ## get each item page
-    def get_item_page():
+    def get_item_page(self):
         # read in the url list file
         url_list = []
         #################
@@ -352,7 +353,7 @@ class PetSmartScraper:
             for row in reader:
                 url_list.append(row[0])
 
-        driver = webdriver.Chrome(executable_path=driver_path)
+        driver = webdriver.Chrome(executable_path=self.driver_path)
 
         ## first 100 item pages: range(0,10)
         ## all items: range(len(url_list))
@@ -386,7 +387,7 @@ class PetSmartScraper:
                 print("None")
 
     ## extract info from each page and load into MongoDB
-    def get_data():
+    def get_data(self):
 
         client = MongoClient("localhost", 27017)
         db = client["petsmart"]
