@@ -3,7 +3,7 @@ map_dict, URL_FEEDER, URL_FEEDER_SUBPAGE,
  URL_CLEANER, URL_DOOR, URL_DOOR_SUBPAGE
 )
 from helpers import download_catalogue_page
-from scraper import ChewyScraper, PetTechScraper
+from scraper import ChewyScraper, PetTechScraper, PetSmartScraper
 
 def main():
     no_pages = -1
@@ -39,6 +39,12 @@ def main():
     # tech = db["chewy_tech_door"]
     scraper.tech = 'chewy_tech_door'
     scraper.saveResultPage(URL_DOOR, URL_DOOR_SUBPAGE, "tech_doors")
+    
+    scraper = PetSmartScraper()
+    scraper.get_search_result()
+    scraper.get_item_url()
+    scraper.get_item_page()
+    scraper.get_data()
 
 if __name__ == "__main__":
     main()

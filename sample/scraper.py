@@ -70,7 +70,7 @@ class PetTechScraper:
     def __init__(self, *args, **kwargs) -> None:
         self.absolute_path = os.path.dirname("/Users/zhongjinying/Downloads/")
         self.client = MongoClient('localhost', 27017)
-        self.headers = headers =  {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36'}
+        self.headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36'}
         self.db = self.client["ddr-final-project"]
         self._tech = None
 
@@ -289,3 +289,211 @@ class PetTechScraper:
             "Reviews": reviews_text
         })
 
+class PetSmartScraper:
+    def __init__(self, *args, **kwargs):
+        for user_agent in args:
+            self.user_agent = user_agent
+        else:
+            self.user_agent = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36'}
+        self.url_parent = "https://www.petsmart.com/"
+        self.driver_path = "/Users/shaolongxue/Documents/_Misc./chromedriver"
+
+    def get_search_result():
+        for page_num in range(0, 2): # change range
+            # change url
+            url = f"https://www.petsmart.com/cat/food-and-treats/veterinary-diets/?pmin=0.01&srule=best-sellers&start={page_num*60}&sz=60&format=ajax"
+            response = requests.get(url, headers = user_agent)
+            soup = BeautifulSoup(response.text, 'html.parser')  
+            #################
+            ###Change Here###
+            #################
+            with open(f"PetSmart_Cat_Vet_Food_{page_num+1:02}.htm", 'w', encoding = 'utf-8') as f:
+                f.write(str(soup.prettify()))
+            
+            time.sleep(15)
+
+    ## get urls of a result page
+    def get_item_url():
+        url_list = []
+        for page_num in range(0, 2):
+            #################
+            ###Change Here###
+            #################
+            file_name = f"PetSmart_Cat_Vet_Food_{page_num+1:02}.htm"
+
+            with open(file_name, 'r', encoding = 'utf-8') as f:
+                soup = BeautifulSoup(f, 'html.parser')
+
+            # extract url
+            urls = soup.find_all("a", class_ = "name-link")
+
+            for item in range(len(urls)):
+                link = urls[item].get("href")
+                url_list.append(url_parent + link)
+
+        # store urls locally for easier retrival
+        #################
+        ###Change Here###
+        #################
+        with open("PetSmart_Cat_Vet_Food_Item_URLs.csv", "w", newline="") as csvfile:
+            writer = csv.writer(csvfile)
+            for url in url_list:
+                writer.writerow([url])
+
+    ## get each item page
+    def get_item_page():
+        # read in the url list file
+        url_list = []
+        #################
+        ###Change Here###
+        #################
+        with open("PetSmart_Dog_Vet_Food_Item_URLs.csv", "r", newline="") as csvfile:
+            reader = csv.reader(csvfile)
+            for row in reader:
+                url_list.append(row[0])
+
+        driver = webdriver.Chrome(executable_path=driver_path)
+
+        ## first 100 item pages: range(0,10)
+        ## all items: range(len(url_list))
+        for item_num in range(100,101):
+            time.sleep(2)
+            driver.get(url_list[item_num])
+            # wait for selenium to load the page properly
+            time.sleep(15)
+
+            # save the initial page
+            soupA = BeautifulSoup(driver.page_source, 'html.parser').prettify()
+            #################
+            ###Change Here###
+            #################
+            with open(f"PetSmart_Dog_Vet_Food_Item_{item_num+1:03}_A.htm", "w", encoding = "utf-8") as f:
+                    f.write(soupA)
+
+            # check for ingredients tab
+            try:
+                ingre = driver.find_element(By.ID, "react-tabs-2")
+                ingre.click()
+                time.sleep(2)
+
+                soupB = BeautifulSoup(driver.page_source, 'html.parser').prettify()
+                #################
+                ###Change Here###
+                #################
+                with open(f"PetSmart_Dog_Vet_Food_Item_{item_num+1:03}_B.htm", "w", encoding = "utf-8") as f:
+                        f.write(soupB)
+            except Exception as e:
+                print("None")
+
+    ## extract info from each page and load into MongoDB
+    def get_data():
+
+        client = MongoClient("localhost", 27017)
+        db = client["petsmart"]
+        collection = db["petfood"]
+
+        for item_num in range(100, 121):
+            filename_A = f"PetSmart_Dog_Vet_Food_Item_{item_num+1:03}_A.htm"
+            filename_B = f"PetSmart_Dog_Vet_Food_Item_{item_num+1:03}_B.htm"
+            ##### A Version #####
+            with open(filename_A, "r", encoding = "utf-8") as f:
+                soup = BeautifulSoup(f, "html.parser")
+
+            # item title
+            title = soup.find("h1", class_ = "pdp-product-name").get_text().strip()
+
+            # item number
+            itemnum = soup.select('span[itemprop="productID"]')[0].text.strip()
+
+            # Animal & Category
+            animal = "Dog"
+            category = "Vet Food"
+
+            # description
+            tab1 = soup.find("div", class_ = "react-tabs__tab-content")
+            try:
+                description = tab1.find("b", text=re.compile("DESCRIPTION")).find_next_sibling("p").text.strip()
+            except Exception as e:
+                description = None
+
+            # Life Stage
+            try:
+                life_stage = tab1.find("b", text=re.compile("Life Stage:")).find_next_sibling(text=True).strip()
+            except Exception as e:
+                life_stage = None
+
+            # Sellng Price & Listing Price
+            try:
+                sell_price = float(soup.find("span", class_ = "product-price-sales")["data-gtm-price"])
+                list_price = soup.find("span", class_ = "product-price-standard").text.strip()
+                list_price = float(re.findall(r'\d+\.\d+', list_price)[0])
+            except Exception as e:
+                sell_price = float(soup.find("span", class_ = "product-price-standard")["data-gtm-price"])
+                list_price = sell_price
+
+            # Weight
+            try:
+                weight_str = tab1.find("b", text=re.compile("Weight")).find_next_sibling(text=True).strip()
+                pattern = r'\d+(\.\d+)?\s*(lb|oz)'
+                match = re.search(pattern, weight_str)
+                weight = match.group()
+            except Exception as e:
+                weight = None
+
+            # Brand
+            try:
+                brand = tab1.find("b", text=re.compile("Brand:")).find_next_sibling(text=True).strip()
+
+            except Exception as e:
+                brand = None
+
+            # Health Consideration
+            try:
+                health_consid = tab1.find("b", text=re.compile("Health Consideration:")).find_next_sibling(text=True).strip()
+            except Exception as e:
+                health_consid = None
+
+            ##### B Version #####
+            try:
+                with open(filename_B, "r", encoding = "utf-8") as f:
+                    soupB = BeautifulSoup(f, "html.parser")
+
+                tab2 = soupB.find("div", class_ = "react-tabs__tab-content")
+                
+                # Ingredients
+                try:
+                    ingredient = tab2.find("b", text=re.compile("Ingredients:")).find_next_sibling().find_next_sibling(text=True).strip()
+                except Exception as e:
+                    ingredient = None
+
+                # Nutritional Info (Guaranteed Analysis)
+                try:
+                    nutri_str = tab2.find("b", text=re.compile("Guaranteed Analysis:")).find_parent().get_text().strip()
+                    nutri_str = re.sub(r'^Guaranteed Analysis:\n\s+', '', nutri_str)
+                    nutrition = re.sub(r'\n\s*\n', '\n', nutri_str)
+                except Exception as e:
+                    nutrition = None
+            except Exception as e:
+                ingredient = None
+                nutrition = None
+
+            document = {
+            "Title": title,
+            "Item_Num": itemnum,
+            "Animal": animal,
+            "Category": category,
+            "Description": description,
+            "Life_Stage": life_stage,
+            "Selling_Price": sell_price,
+            "Listing_Price": list_price,
+            "Weight": weight,
+            "Brand": brand,
+            "Health_Consideration": health_consid,
+            "Ingredients": ingredient,
+            "Nutritional_Info": nutrition
+            }
+
+            collection.insert_one(document)
+
+            print("------")
+            print("Item: ", item_num+1)
