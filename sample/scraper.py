@@ -46,13 +46,13 @@ class ChewyScraper:
                     ]
                     # Prices
                     if soup.select("div[data-testid=advertised-price]"):
-                        doc_dict["advertised_price"] = soup.select(
+                        doc_dict["advertised_price"] = float(soup.select(
                             "div[data-testid=advertised-price]"
-                        )[0].find(string=True)
+                        )[0].find(string=True).replace("$", ""))
                     if len(soup.select("div[data-testid=strike-through-price]")) != 0:
-                        doc_dict["list_price"] = soup.select(
+                        doc_dict["list_price"] = float(soup.select(
                             "div[data-testid=strike-through-price]"
-                        )[0].find(string=True)
+                        )[0].find(string=True).replace("$", ""))
                     # Ingredients
                     if len(soup.select("section#INGREDIENTS-section > p")) != 0:
                         doc_dict["ingredients"] = soup.select(
@@ -288,10 +288,14 @@ class PetTechScraper:
         # selling price
         selling_price = item.find("div", attrs={"data-testid": "advertised-price"})
         selling_price = re.sub("Chewy Price", "", selling_price.text)
+        #TODO(Banner): Check with Jinny
+        selling_price = float(selling_price.replace("$", ""))
         # list price
         list_price = item.find("div", attrs={"data-testid": "strike-through-price"})
         if list_price is not None:
             list_price = re.sub("Chewy Price", "", list_price.text)
+            #TODO(Banner): Check with Jinny
+            list_price = float(list_price.replace("$", ""))
 
         ## specifications
         # find table and get rows
